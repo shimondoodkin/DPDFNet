@@ -110,4 +110,4 @@ If you use this work, please cite the paper:
 
 ## License
 
-Apache License 2.0. See `LICENSE-2.0.txt`.
+Apache License 2.0. See [LICENSE](LICENSE).
