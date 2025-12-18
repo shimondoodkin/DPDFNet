@@ -2,7 +2,7 @@
 <br></br>
 
 <p align="center">
-  <a href="https://your-project-url.com">
+  <a href="https://ceva-ip.github.io/DPDFNet/">
     <img src="https://img.shields.io/badge/Project-Page-orange" alt="Project Page">
   </a>
   <a href="https://arxiv.org/abs/your-paper-id">
