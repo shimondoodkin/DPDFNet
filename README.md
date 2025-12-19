@@ -5,7 +5,7 @@
   <a href="https://ceva-ip.github.io/DPDFNet/">
     <img src="https://img.shields.io/badge/Project-Page-orange" alt="Project Page">
   </a>
-  <a href="https://arxiv.org/abs/your-paper-id">
+  <a href="https://arxiv.org/abs/2512.16420">
     <img src="https://img.shields.io/badge/arXiv-Paper-b31b1b" alt="arXiv Paper">
   </a>
   <a href="https://huggingface.co/Ceva-IP/DPDFNet">
