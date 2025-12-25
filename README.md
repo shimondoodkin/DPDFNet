@@ -1,17 +1,13 @@
 <h1 align="center">DPDFNet: Boosting DeepFilterNet2 via Dual-Path RNN</h1>
 <br></br>
 
-<p align="center">
-  <a href="https://ceva-ip.github.io/DPDFNet/">
-    <img src="https://img.shields.io/badge/Project-Page-orange" alt="Project Page">
-  </a>
-  <a href="https://arxiv.org/abs/2512.16420">
-    <img src="https://img.shields.io/badge/arXiv-Paper-b31b1b" alt="arXiv Paper">
-  </a>
-  <a href="https://huggingface.co/Ceva-IP/DPDFNet">
-    <img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-yellow" alt="HuggingFace Models">
-  </a>
-</p>
+<div align="center">
+
+[![Project Page](https://img.shields.io/badge/Project-Page-orange)](https://ceva-ip.github.io/DPDFNet/)
+[![arXiv Paper](https://img.shields.io/badge/arXiv-Paper-b31b1b)](https://arxiv.org/abs/2512.16420)
+[![🤗 Hugging Face Models](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-yellow)](https://huggingface.co/Ceva-IP/DPDFNet)
+
+</div>
 
 <p align="center">
   <sub><em><strong>--- Official implementation for the DPDFNet paper (2025) ---</strong></em></sub>
