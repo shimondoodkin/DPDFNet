@@ -11,12 +11,11 @@
 </div>
 
 <p align="center">
-  <sub><em><strong>--- Official implementation for the DPDFNet paper (2025) ---</strong></em></sub>
+ <sub><em><strong>--- Official implementation for the DPDFNet paper (2025) ---</strong></em></sub>
 </p>
 
 ## Abstract
 We present DPDFNet, a causal single-channel speech enhancement model that extends the DeepFilterNet2 architecture with dual-path blocks in the encoder, strengthening long-range temporal and cross-band modeling while preserving the original enhancement framework. In addition, we demonstrate that adding a loss component to mitigate over-attenuation in the enhanced speech, combined with a fine-tuning phase tailored for “always-on” applications, leads to substantial improvements in overall model performance. To compare our proposed architecture with a variety of causal open-source models, we created a new evaluation set comprising long, low-SNR recordings in 12 languages across everyday noise scenarios, better reflecting real-world conditions than commonly used benchmarks. On this evaluation set, DPDFNet delivers superior performance to other causal open-source models, including some that are substantially larger and more computationally demanding. We also propose a holistic metric named PRISM, a composite, scale-normalized aggregate of intrusive and non-intrusive metrics, which demonstrates clear scalability with the number of dual-path blocks. We further demonstrate on-device feasibility by deploying DPDFNet on Ceva-NeuPro™-Nano edge NPUs. Results indicate that DPDFNet-4, our second-largest model, achieves real-time performance on NPN32 and runs even faster on NPN64, confirming that state-of-the-art quality can be sustained within strict embedded power and latency constraints.
-
 
 ---
 
@@ -38,12 +37,20 @@ Use model names **without** the `.tflite` suffix in scripts (e.g., `dpdfnet4`, n
 
 Supported model files:
 
+#### 16 kHz models
+
 | Model           | Params [M] | MACs [G] | TFLite Size [MB] | Intended Use                    |
 | --------------- | :--------: | :------: | :--------------: | ------------------------------- |
 | baseline.tflite |    2.31    |   0.36   |        8.5       | Fastest / lowest resource usage |
 | dpdfnet2.tflite |    2.49    |   1.35   |       10.7       | Real-time / embedded devices    |
 | dpdfnet4.tflite |    2.84    |   2.36   |       12.9       | Balanced performance            |
 | dpdfnet8.tflite |    3.54    |   4.37   |       17.2       | Best enhancement quality        |
+
+#### 48 kHz model
+
+| Model                    | Params [M] | MACs [G] | TFLite Size [MB] | Intended Use                 |
+| ------------------------ | :--------: | :------: | :--------------: | ---------------------------- |
+| dpdfnet2_48khz_hr.tflite |    2.58    |   2.42   |       11.6       | High-resolution 48 kHz audio |
 
 ### Download models
 
@@ -54,8 +61,15 @@ Example download into the expected folder:
 pip install -U "huggingface_hub[cli]"
 mkdir -p model_zoo/tflite
 
+# 16 kHz models
 huggingface-cli download Ceva-IP/DPDFNet \
   baseline.tflite dpdfnet2.tflite dpdfnet4.tflite dpdfnet8.tflite \
+  --local-dir model_zoo/tflite \
+  --local-dir-use-symlinks False
+
+# 48 kHz model
+huggingface-cli download Ceva-IP/DPDFNet \
+  dpdfnet2_48khz_hr.tflite \
   --local-dir model_zoo/tflite \
   --local-dir-use-symlinks False
 ```
@@ -67,7 +81,7 @@ huggingface-cli download Ceva-IP/DPDFNet \
 ### Install (full: offline + real-time demo)
 ```bash
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+source .venv/bin/activate # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
@@ -81,17 +95,19 @@ Both scripts look for models under `./model_zoo/tflite` by default.
 
 ---
 
-
 ## Offline Enhancement
 
 Enhance all `*.wav` files in a folder (**non-recursive**) and write enhanced WAVs to an output folder:
 
 ```bash
-python enhance.py   --noisy_dir /path/to/noisy_wavs   --enhanced_dir /path/to/output   --model_name dpdfnet8
+python enhance.py --noisy_dir /path/to/noisy_wavs --enhanced_dir /path/to/output --model_name dpdfnet8
 ```
 
 What the script does:
-- Loads audio (any sample rate), converts to **mono**, resamples to **16 kHz** for the model.
+- Loads audio (any sample rate), converts to **mono**, and resamples to the model's expected sample rate.
+  - **16 kHz models:** `baseline`, `dpdfnet2`, `dpdfnet4`, `dpdfnet8`
+  - **48 kHz model:** `dpdfnet2_48khz_hr`
+- When using `dpdfnet2_48khz_hr`, the script automatically switches to a **48 kHz** processing pipeline.
 - Runs the model **frame-by-frame in streaming mode**.
 - Resamples back to the original sample rate, and saves **mono PCM_16 WAV** outputs.
 
@@ -117,11 +133,13 @@ python real_time_demo.py
 Edit constants near the top of `real_time_demo.py`:
 - `MODEL_NAME`: `baseline | dpdfnet2 | dpdfnet4 | dpdfnet8`
 
+> **Note:** The real-time microphone demo supports the **16 kHz** models only.
+
 ### Usage
 - Speak into your microphone.
 - Use the UI buttons to switch playback:
-  - **Noisy**: plays raw mic input
-  - **Enhanced**: plays model output
+ - **Noisy**: plays raw mic input
+ - **Enhanced**: plays model output
 - The console prints **ms per frame** to help assess real-time performance.
 
 ---
@@ -134,7 +152,7 @@ To compute *intrusive* and *non-intrusive* metrics on our [DPDFNet EvalSet](http
 We provide a dedicated script, `pesq_stoi_sisnr_calc.py`, which computes **PESQ**, **STOI**, and **SI-SNR** for paired *reference* and *enhanced* audio. The script includes a built-in auto-alignment step that corrects small start-time offsets and drift between the reference and the enhanced signals before scoring, to ensure fair comparisons.
 
 ### Non-intrusive metrics
-- **DNSMOS (P.835 & P.808)** - We use the **official** DNSMOS local inference script from the DNS Challenge repository: [`dnsmos_local.py`](https://github.com/microsoft/DNS-Challenge/blob/master/DNSMOS/dnsmos_local.py). Please follow their installation and model download instructions in that project before running.  
+- **DNSMOS (P.835 & P.808)** - We use the **official** DNSMOS local inference script from the DNS Challenge repository: [`dnsmos_local.py`](https://github.com/microsoft/DNS-Challenge/blob/master/DNSMOS/dnsmos_local.py). Please follow their installation and model download instructions in that project before running. 
 - **NISQA v2** - We use the **official** NISQA project: <https://github.com/gabrielmittag/NISQA>. Refer to their README for environment setup, pretrained model weights, and inference commands (*e.g.*, running `nisqa_predict.py` on a folder of WAVs).
 
 ## Citation
@@ -142,9 +160,9 @@ If you use this work, please cite the paper:
 
 ```bibtex
 @article{rika2025dpdfnet,
-  title   = {DPDFNet: Boosting DeepFilterNet2 via Dual-Path RNN},
-  author  = {Rika, Daniel and Sapir, Nino and Gus, Ido},
-  year    = {2025},
+ title = {DPDFNet: Boosting DeepFilterNet2 via Dual-Path RNN},
+ author = {Rika, Daniel and Sapir, Nino and Gus, Ido},
+ year = {2025},
 }
 ```
 
