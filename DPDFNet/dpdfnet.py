@@ -386,7 +386,7 @@ class DPDFNet(Module):
             emb_num_layers: int = 2,
             df_num_layers: int = 2,
             stateful: bool = False,
-            mask_method: str = 'separate',
+            mask_method: str = 'before_df',
             erb_dynamic_var: bool = False,
             norm_stateful: bool = False,
             upsample_conv_type: str = 'subpixel',     # transpose | subpixel
