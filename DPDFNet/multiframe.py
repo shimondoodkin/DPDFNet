@@ -76,11 +76,13 @@ class MultiFrameModule(nn.Module):
         self.lookahead = lookahead
 
     def spec_unfold_real(self, spec: Tensor):
+        """Unfold real-valued spectrogram [B, C, T, F, 2] into [B, C, N, T, F, 2]."""
         if self.need_unfold:
-            spec = self.pad(spec).unfold(-3, self.frame_size, 1)
-            return spec.permute(0, 1, 5, 2, 3, 4)
-            # return as_windowed(self.pad(spec), self.frame_size, 1, dim=-3)
-        return spec.unsqueeze(-1)
+            spec_padded = self.pad(spec)  # [B, C, T_padded, F, 2]
+            T = spec.shape[2]
+            windows = [spec_padded[:, :, i:i + T, :, :] for i in range(self.frame_size)]
+            return torch.stack(windows, dim=2)  # [B, C, N, T, F, 2]
+        return spec.unsqueeze(2)  # [B, C, 1, T, F, 2]
 
     def spec_unfold(self, spec: Tensor):
         """Pads and unfolds the spectrogram according to frame_size.
@@ -107,6 +109,7 @@ class MultiFrameModule(nn.Module):
         return torch.einsum("...n,...n->...", spec, coefs)
 
 
+# NOT USED by models — used by MfWf/MfMvdr (complex, not exported to ONNX)
 def psd(x: Tensor, n: int) -> Tensor:
     """Compute the PSD correlation matrix Rxx for a spectrogram.
 
@@ -123,6 +126,7 @@ def psd(x: Tensor, n: int) -> Tensor:
     return torch.einsum("...n,...m->...mn", x, x.conj())
 
 
+# NOT USED by models — complex version, used by DF class. Models use df_real via DFreal.
 def df(spec: Tensor, coefs: Tensor) -> Tensor:
     """Deep filter implementation using `torch.einsum`. Requires unfolded spectrogram.
 
@@ -146,19 +150,17 @@ def df_real(spec: Tensor, coefs: Tensor) -> Tensor:
     Returns:
         spec (real-valued Tensor): Filtered Spectrogram of shape [B, C, T, F, 2]
     """
-    b, c, _, t, f, _ = spec.shape
-    out = torch.empty((b, c, t, f, 2), dtype=spec.dtype, device=spec.device)
-    # real
-    out[..., 0] = (spec[..., 0] * coefs[..., 0]).sum(dim=2)
-    out[..., 0] -= (spec[..., 1] * coefs[..., 1]).sum(dim=2)
-    # imag
-    out[..., 1] = (spec[..., 0] * coefs[..., 1]).sum(dim=2)
-    out[..., 1] += (spec[..., 1] * coefs[..., 0]).sum(dim=2)
-    return out
+    # Complex multiply: (a+bi)(c+di) = (ac-bd) + (ad+bc)i
+    out_re = (spec[..., 0] * coefs[..., 0]).sum(dim=2) \
+           - (spec[..., 1] * coefs[..., 1]).sum(dim=2)
+    out_im = (spec[..., 0] * coefs[..., 1]).sum(dim=2) \
+           + (spec[..., 1] * coefs[..., 0]).sum(dim=2)
+    return torch.stack([out_re, out_im], dim=-1)  # [B, C, T, F, 2]
 
 
+# NOT USED by models — complex version. Models use DFreal below.
 class DF(MultiFrameModule):
-    """Deep Filtering."""
+    """Deep Filtering (complex). Replaced by DFreal for ONNX compatibility."""
 
     conj: Final[bool]
 
@@ -197,16 +199,18 @@ class DFreal(MultiFrameModule):
             coefs (Tensor): Spectrogram of shape [B, C, T, F, 2]
         """
         spec_u = self.spec_unfold_real(spec)
-        spec_f = spec_u.narrow(-2, 0, self.num_freqs)
+        spec_f = spec_u[..., :self.num_freqs, :]
         new_shape = [coefs.shape[0], -1, self.frame_size] + list(coefs.shape[2:])
         coefs = coefs.view(new_shape)
         if self.conj:
             coefs = coefs.conj()
-        spec_f = df_real(spec_f, coefs)
-        spec[..., : self.num_freqs, :] = spec_f
-        return spec
+        filtered = df_real(spec_f, coefs)  # [B, C, T, F', 2]
+        # Concatenate filtered low-freq + original high-freq (no in-place writes)
+        spec_hi = spec[..., self.num_freqs:, :]
+        return torch.cat([filtered, spec_hi], dim=-2)  # [B, C, T, F, 2]
 
 
+# NOT USED by models — complex ratio mask, not exported to ONNX
 class CRM(MultiFrameModule):
     """Complex ratio mask."""
 
@@ -218,6 +222,7 @@ class CRM(MultiFrameModule):
         return spec.squeeze(-1).mul(coefs)
 
 
+# NOT USED by models — complex Wiener filter, not exported to ONNX
 class MfWf(MultiFrameModule):
     """Multi-frame Wiener filter base module."""
 
@@ -314,6 +319,7 @@ class MfWf(MultiFrameModule):
         return spec
 
 
+# NOT USED by models — complex MVDR beamformer, not exported to ONNX
 class MfMvdr(MultiFrameModule):
     """Multi-frame minimum variance distortionless beamformer based on Rnn**-1 and speech IFC vector."""
 

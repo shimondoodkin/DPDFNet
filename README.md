@@ -22,9 +22,19 @@ We present DPDFNet, a causal single-channel speech enhancement model that extend
 ## Repository Overview
 
 This repo includes:
+
 - **Offline enhancement** for a folder of WAV files (`enhance.py`)
 - A **real-time microphone demo** with live spectrograms and A/B playback (`real_time_demo.py`)
-- Pre-exported **TFLite models** expected under: `model_zoo/tflite/*.tflite`
+- **TFLite inference** script for streaming frame-by-frame enhancement (`run_tflite.py`)
+- **ONNX export** scripts for stateless multi-frame and stateful single-frame models
+- Pre-trained **PyTorch checkpoints**, **TFLite** models, and exported **ONNX** models under `model_zoo/`
+### 16 kHz models
+
+
+### Models trained on:
+Training data: DNS4 (downsampled), MLS, MUSAN, and FSD50K.
+
+All models are causal and low-latency, designed for streaming use cases such as telephony, conferencing, and embedded devices.
 
 ### TFLite models
 
@@ -142,6 +152,48 @@ Edit constants near the top of `real_time_demo.py`:
 
 ---
 
+---
+
+## TFLite Inference
+
+`run_tflite.py` runs TFLite models on WAV files using streaming frame-by-frame inference.
+Models are loaded from `model_zoo/tflite/`.
+
+```bash
+python run_tflite.py --noisy_dir /path/to/noisy_wavs --enhanced_dir /path/to/out --model_name dpdfnet8
+```
+
+Available `--model_name` options: `baseline`, `dpdfnet2`, `dpdfnet4`, `dpdfnet8`, `dpdfnet2_48khz_hr`.
+
+When using `dpdfnet2_48khz_hr`, the script automatically switches to the 48kHz processing pipeline.
+
+---
+
+## ONNX Export
+
+### Stateless (multi-frame)
+
+Exports spectrum-in / spectrum-out models with dynamic time dimension:
+
+```bash
+python export_pytorch_to_onnx.py                          # all models
+python export_pytorch_to_onnx.py --model_name dpdfnet2    # single model
+```
+
+Output: `model_zoo/stateless/<name>/model.onnx`
+
+### Stateful (single-frame)
+
+Exports single-frame models with explicit state I/O for real-time streaming:
+
+```bash
+python export_stateful_onnx.py                          # all models
+python export_stateful_onnx.py --model_name dpdfnet2    # single model
+```
+
+Output: `model_zoo/stateful/<name>/model_stateful.onnx` + `initial_states.bin` + `initial_states.json`
+
+---
 ## Metrics & Evaluation
 
 To compute *intrusive* and *non-intrusive* metrics on our [DPDFNet EvalSet](https://huggingface.co/datasets/Ceva-IP/DPDFNet_EvalSet), we use the tools listed below. For aggregate quality reporting, we rely on PRISM, the scale‑normalized composite metric introduced in the DPDFNet paper.

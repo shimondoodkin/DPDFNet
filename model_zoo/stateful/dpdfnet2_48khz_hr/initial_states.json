@@ -1,0 +1,135 @@
+[
+  {
+    "name": "erb_norm_mu",
+    "shape": [
+      1,
+      481
+    ],
+    "offset": 0,
+    "num_elements": 481
+  },
+  {
+    "name": "spec_norm_s",
+    "shape": [
+      1,
+      96
+    ],
+    "offset": 481,
+    "num_elements": 96
+  },
+  {
+    "name": "enc_gru_h",
+    "shape": [
+      1,
+      1,
+      256
+    ],
+    "offset": 577,
+    "num_elements": 256
+  },
+  {
+    "name": "erb_dec_gru_h",
+    "shape": [
+      2,
+      1,
+      256
+    ],
+    "offset": 833,
+    "num_elements": 512
+  },
+  {
+    "name": "df_dec_gru_h",
+    "shape": [
+      2,
+      1,
+      256
+    ],
+    "offset": 1345,
+    "num_elements": 512
+  },
+  {
+    "name": "dprnn_erb_h0",
+    "shape": [
+      1,
+      40,
+      64
+    ],
+    "offset": 1857,
+    "num_elements": 2560
+  },
+  {
+    "name": "dprnn_erb_h1",
+    "shape": [
+      1,
+      40,
+      64
+    ],
+    "offset": 4417,
+    "num_elements": 2560
+  },
+  {
+    "name": "dprnn_df_h0",
+    "shape": [
+      1,
+      48,
+      64
+    ],
+    "offset": 6977,
+    "num_elements": 3072
+  },
+  {
+    "name": "dprnn_df_h1",
+    "shape": [
+      1,
+      48,
+      64
+    ],
+    "offset": 10049,
+    "num_elements": 3072
+  },
+  {
+    "name": "erb_conv0_buf",
+    "shape": [
+      1,
+      1,
+      2,
+      480
+    ],
+    "offset": 13121,
+    "num_elements": 960
+  },
+  {
+    "name": "df_conv0_buf",
+    "shape": [
+      1,
+      2,
+      2,
+      96
+    ],
+    "offset": 14081,
+    "num_elements": 384
+  },
+  {
+    "name": "df_convp_buf",
+    "shape": [
+      1,
+      64,
+      4,
+      96
+    ],
+    "offset": 14465,
+    "num_elements": 24576
+  },
+  {
+    "name": "df_spec_buf",
+    "shape": [
+      1,
+      1,
+      4,
+      481,
+      2
+    ],
+    "offset": 39041,
+    "num_elements": 3848
+  }
+]

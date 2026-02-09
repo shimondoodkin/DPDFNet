@@ -1,0 +1,255 @@
+[
+  {
+    "name": "erb_norm_mu",
+    "shape": [
+      1,
+      32
+    ],
+    "offset": 0,
+    "num_elements": 32
+  },
+  {
+    "name": "spec_norm_s",
+    "shape": [
+      1,
+      96
+    ],
+    "offset": 32,
+    "num_elements": 96
+  },
+  {
+    "name": "enc_gru_h",
+    "shape": [
+      1,
+      1,
+      256
+    ],
+    "offset": 128,
+    "num_elements": 256
+  },
+  {
+    "name": "erb_dec_gru_h",
+    "shape": [
+      2,
+      1,
+      256
+    ],
+    "offset": 384,
+    "num_elements": 512
+  },
+  {
+    "name": "df_dec_gru_h",
+    "shape": [
+      2,
+      1,
+      256
+    ],
+    "offset": 896,
+    "num_elements": 512
+  },
+  {
+    "name": "dprnn_erb_h0",
+    "shape": [
+      1,
+      8,
+      64
+    ],
+    "offset": 1408,
+    "num_elements": 512
+  },
+  {
+    "name": "dprnn_erb_h1",
+    "shape": [
+      1,
+      8,
+      64
+    ],
+    "offset": 1920,
+    "num_elements": 512
+  },
+  {
+    "name": "dprnn_erb_h2",
+    "shape": [
+      1,
+      8,
+      64
+    ],
+    "offset": 2432,
+    "num_elements": 512
+  },
+  {
+    "name": "dprnn_erb_h3",
+    "shape": [
+      1,
+      8,
+      64
+    ],
+    "offset": 2944,
+    "num_elements": 512
+  },
+  {
+    "name": "dprnn_erb_h4",
+    "shape": [
+      1,
+      8,
+      64
+    ],
+    "offset": 3456,
+    "num_elements": 512
+  },
+  {
+    "name": "dprnn_erb_h5",
+    "shape": [
+      1,
+      8,
+      64
+    ],
+    "offset": 3968,
+    "num_elements": 512
+  },
+  {
+    "name": "dprnn_erb_h6",
+    "shape": [
+      1,
+      8,
+      64
+    ],
+    "offset": 4480,
+    "num_elements": 512
+  },
+  {
+    "name": "dprnn_erb_h7",
+    "shape": [
+      1,
+      8,
+      64
+    ],
+    "offset": 4992,
+    "num_elements": 512
+  },
+  {
+    "name": "dprnn_df_h0",
+    "shape": [
+      1,
+      48,
+      64
+    ],
+    "offset": 5504,
+    "num_elements": 3072
+  },
+  {
+    "name": "dprnn_df_h1",
+    "shape": [
+      1,
+      48,
+      64
+    ],
+    "offset": 8576,
+    "num_elements": 3072
+  },
+  {
+    "name": "dprnn_df_h2",
+    "shape": [
+      1,
+      48,
+      64
+    ],
+    "offset": 11648,
+    "num_elements": 3072
+  },
+  {
+    "name": "dprnn_df_h3",
+    "shape": [
+      1,
+      48,
+      64
+    ],
+    "offset": 14720,
+    "num_elements": 3072
+  },
+  {
+    "name": "dprnn_df_h4",
+    "shape": [
+      1,
+      48,
+      64
+    ],
+    "offset": 17792,
+    "num_elements": 3072
+  },
+  {
+    "name": "dprnn_df_h5",
+    "shape": [
+      1,
+      48,
+      64
+    ],
+    "offset": 20864,
+    "num_elements": 3072
+  },
+  {
+    "name": "dprnn_df_h6",
+    "shape": [
+      1,
+      48,
+      64
+    ],
+    "offset": 23936,
+    "num_elements": 3072
+  },
+  {
+    "name": "dprnn_df_h7",
+    "shape": [
+      1,
+      48,
+      64
+    ],
+    "offset": 27008,
+    "num_elements": 3072
+  },
+  {
+    "name": "erb_conv0_buf",
+    "shape": [
+      1,
+      1,
+      2,
+      32
+    ],
+    "offset": 30080,
+    "num_elements": 64
+  },
+  {
+    "name": "df_conv0_buf",
+    "shape": [
+      1,
+      2,
+      2,
+      96
+    ],
+    "offset": 30144,
+    "num_elements": 384
+  },
+  {
+    "name": "df_convp_buf",
+    "shape": [
+      1,
+      64,
+      4,
+      96
+    ],
+    "offset": 30528,
+    "num_elements": 24576
+  },
+  {
+    "name": "df_spec_buf",
+    "shape": [
+      1,
+      1,
+      4,
+      161,
+      2
+    ],
+    "offset": 55104,
+    "num_elements": 1288
+  }
+]

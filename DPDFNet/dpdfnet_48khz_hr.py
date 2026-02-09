@@ -536,7 +536,7 @@ class DPDFNet48HR(Module):
         self.mask = Mask(self.erb_inv_fb)
 
         self.df_order = df_order
-        self.df_op = MF.DF(num_freqs=self.nb_df, frame_size=df_order, lookahead=self.df_lookahead)
+        self.df_op = MF.DFreal(num_freqs=self.nb_df, frame_size=df_order, lookahead=self.df_lookahead)
         self.df_dec = DfDecoder(
             nb_erb=nb_erb,
             nb_df=self.nb_df,

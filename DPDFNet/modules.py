@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import einops
 import torch
 import torch.nn.functional as F
 from typing import Optional, Final, Callable, Tuple, Union, Iterable, List
@@ -114,23 +113,21 @@ class DPRNNBlock(nn.Module):
         assert C == self.hidden_dim, f"Channel dim must equal hidden_dim ({self.hidden_dim}), got {C}"
 
         # Intra-chunk (feature) RNN
-        x_intra = einops.rearrange(inputs, 'b c t f -> (b t) f c')  # -> (B*T, F, C)
+        x_intra = inputs.permute(0, 2, 3, 1).reshape(B * T, F, C)   # -> (B*T, F, C)
         x_intra, _ = self._execute_rnn(
             x_intra, self.intra_gru, None
         )
         x_intra = self.ln_intra(self.fc_intra(x_intra))             # -> (B*T, F, hidden_dim)
-        x_intra = einops.rearrange(x_intra, '(b t) f c -> b c t f',
-                                   b=B, t=T, f=F)                 # -> (B, C, T, F)
+        x_intra = x_intra.reshape(B, T, F, C).permute(0, 3, 1, 2)  # -> (B, C, T, F)
         x = inputs + x_intra  # residual
 
         # Inter-chunk (time) RNN
-        x_inter = einops.rearrange(x, 'b c t f -> (b f) t c')       # -> (B*F, T, C)
+        x_inter = x.permute(0, 3, 2, 1).reshape(B * F, T, C)       # -> (B*F, T, C)
         x_inter, self.inter_states = self._execute_rnn(
             x_inter, self.inter_gru, self.inter_states
         )
         x_inter = self.ln_inter(self.fc_inter(x_inter))              # -> (B*F, T, hidden_dim)
-        x_inter = einops.rearrange(x_inter, '(b f) t c -> b c t f',
-                                   b=B, t=T, f=F)                 # -> (B, C, T, F)
+        x_inter = x_inter.reshape(B, F, T, C).permute(0, 3, 2, 1)  # -> (B, C, T, F)
 
         return x + x_inter  # residual
 
@@ -211,6 +208,7 @@ class DPRNN(nn.Module):
         return x
 
 
+# NOT USED by models — only used by ConvSTFT/ConviSTFT below
 def init_kernels(win_len, win_inc, fft_len, win_func=None, invers=False):
     if win_func is None:
         window = np.ones(win_len)
@@ -237,6 +235,7 @@ def init_kernels(win_len, win_inc, fft_len, win_func=None, invers=False):
     )
 
 
+# NOT USED by models — uses complex ops, not exported to ONNX. Used by ConviSTFT.
 class ConvSTFT(nn.Module):
     """
     Taken from https://github.com/wangtianrui/DCCRN/blob/4f961fcb3e431e3d2d4393b40532fe982692b45c/utils/conv_stft.py
@@ -291,6 +290,7 @@ class ConvSTFT(nn.Module):
             return torch.stack([real, imag], dim=-1)
 
 
+# NOT USED by models — uses complex ops, not exported to ONNX
 class ConviSTFT(nn.Module):
 
     def __init__(self,
@@ -339,6 +339,7 @@ class ConviSTFT(nn.Module):
         return outputs
 
 
+# USED by DPDFNet/DPDFNet48HR for Python STFT — not exported to ONNX (STFT done in Rust)
 class Stft(nn.Module):
     def __init__(self, n_fft: int, win_len: Optional[int] = None,
                  hop: Optional[int] = None, window: Optional[Tensor] = None, normalized: bool = True):
@@ -370,6 +371,7 @@ class Stft(nn.Module):
         return out
 
 
+# USED by DPDFNet/DPDFNet48HR for Python iSTFT — uses as_complex(), not exported to ONNX
 class Istft(nn.Module):
     def __init__(self, n_fft_inv: int, win_len_inv: Optional[int] = None,
                  hop_inv: Optional[int] = None, window_inv: Optional[Tensor] = None, normalized: bool = True):
@@ -514,7 +516,7 @@ class SpecNorm(nn.Module):
         else:
             s = self.s
 
-        x_abs = as_complex(x).abs()
+        x_abs = torch.sqrt(x[..., 0] ** 2 + x[..., 1] ** 2)  # [B, T, F]
         x_r_norm = []
         x_i_norm = []
         # s = torch.mean(x_abs, dim=1)
@@ -602,7 +604,7 @@ class SpecNorm48(nn.Module):
         else:
             s = self.s
 
-        x_abs = as_complex(x).abs()
+        x_abs = torch.sqrt(x[..., 0] ** 2 + x[..., 1] ** 2)  # [B, T, F]
         x_r_norm = []
         x_i_norm = []
         # s = torch.mean(x_abs, dim=1)
@@ -633,9 +635,9 @@ class Conv2DPointWiseAsLinear(nn.Module):
     def forward(self, x):
         # input shape should be [B, C, T, F]
         B, C, T, F = x.shape
-        x = einops.rearrange(x, 'b c t f -> (b t f) c')
+        x = x.permute(0, 2, 3, 1).reshape(B * T * F, C)
         x = self.cnn_fc(x)
-        x = einops.rearrange(x, '(b t f) c -> b c t f', b=B, t=T, f=F)
+        x = x.reshape(B, T, F, -1).permute(0, 3, 1, 2)
         return x
 
     def reset_parameters(self) -> None:
@@ -803,7 +805,9 @@ class SubPixelConv2D(nn.Module):
 
     def forward(self, inputs):
         out = torch.cat([conv(inputs) for conv in self.convs], dim=1)     # B, S*C, T, F
-        out = einops.rearrange(out, 'b (s c) t f -> b c t (f s)', s=self.fstride, c=self.out_channels)
+        B_sz, _, T_sz, F_sz = out.shape
+        out = out.reshape(B_sz, self.fstride, self.out_channels, T_sz, F_sz)
+        out = out.permute(0, 2, 3, 4, 1).reshape(B_sz, self.out_channels, T_sz, F_sz * self.fstride)
         return out
 
 
@@ -977,6 +981,7 @@ class GroupedConv2D(nn.Module):
             return self.convs[0](x)
 
 
+# NOT USED by models — older GRU variant. Models use SqueezedGRU_S below.
 class SqueezedGRU(nn.Module):
     input_size: Final[int]
     hidden_size: Final[int]

@@ -29,11 +29,13 @@ def get_activation(activation: str):
         raise NotImplementedError()
 
 
+# NOT USED by models
 def layer_norm(x):
     x = (x - x.mean(dim=-1, keepdim=True)) / (x.std(dim=-1, keepdim=True) + 1e-8)
     return x
 
 
+# NOT USED by models — uses complex ops
 def create_comb_filter_matrix(pitch_min=65, pitch_max=500, nfft=512, sample_rate=16000, max_order=None,
                               output_domain='freq', symmetric=False):
     assert output_domain in ['time', 'freq']
@@ -65,6 +67,7 @@ def create_comb_filter_matrix(pitch_min=65, pitch_max=500, nfft=512, sample_rate
         return cf_mag
 
 
+# USED by Istft — complex op, not exported to ONNX (Python-only STFT path)
 def as_complex(x: Tensor) -> Tensor:
     if torch.is_complex(x):
         return x
@@ -75,6 +78,7 @@ def as_complex(x: Tensor) -> Tensor:
     return torch.view_as_complex(x)
 
 
+# USED by DPDFNet._feature_extraction — complex op, not exported to ONNX
 def as_real(x: Tensor) -> Tensor:
     if torch.is_complex(x):
         return torch.view_as_real(x)
@@ -85,22 +89,28 @@ def to_db(x: Tensor) -> Tensor:
     return 10 * torch.log10(x + 1e-10)
 
 
+# NOT USED by models — commented out in _feature_extraction
 def power_law_compression(signal: Tensor, alpha: float) -> Tensor:
     return torch.sign(signal) * torch.pow(torch.abs(signal), alpha)
 
 
+# NOT USED by models
 def power_law_decompression(signal: Tensor, alpha: float) -> Tensor:
     return torch.sign(signal) * torch.pow(torch.abs(signal), 1/alpha)
 
 
 def get_magnitude(x: Tensor) -> Tensor:
-    return as_complex(x).abs()
+    if torch.is_complex(x):
+        return x.abs()
+    return torch.sqrt(x[..., 0] ** 2 + x[..., 1] ** 2)
 
 
+# NOT USED by models — uses complex ops
 def get_angle(x: Tensor) -> Tensor:
     return angle.apply(as_complex(x))
 
 
+# NOT USED by models — used by get_angle above
 class angle(Function):
     """Similar to torch.angle but robustify the gradient for zero magnitude."""
 
@@ -116,6 +126,7 @@ class angle(Function):
         return torch.view_as_complex(torch.stack((-x.imag * grad_inv, x.real * grad_inv), dim=-1))
 
 
+# NOT USED by models — complex einsum, replaced by df_real in multiframe.py
 def apply_df(spec: Tensor, coefs: Tensor) -> Tensor:
     """Deep filter implementation using `torch.einsum`. Requires unfolded spectrogram.
 
@@ -129,6 +140,7 @@ def apply_df(spec: Tensor, coefs: Tensor) -> Tensor:
     return torch.einsum("...tfn,...ntf->...tf", spec, coefs)
 
 
+# NOT USED by models — superseded by df_real() in multiframe.py
 def apply_df_real(spec: Tensor, coefs: Tensor) -> Tensor:
     """Deep filter implementation for real valued input Tensors. Requires unfolded spectrograms.
 
@@ -167,6 +179,7 @@ def get_wnorm(window_len: int, frame_size: int) -> float:
     return 1.0 / (window_len**2 / (2 * frame_size))
 
 
+# NOT USED by models — training/evaluation utility
 def _local_energy(x: Tensor, ws: int, device: torch.device) -> Tensor:
     if (ws % 2) == 0:
         ws += 1
@@ -177,6 +190,7 @@ def _local_energy(x: Tensor, ws: int, device: torch.device) -> Tensor:
     return torch.sum(x, dim=-1).div(ws)
 
 
+# NOT USED by models — training/evaluation utility, uses complex ops
 def local_snr(
     clean: Tensor,
     noise: Tensor,
@@ -200,6 +214,7 @@ def local_snr(
     return snr, E_speech, E_noise
 
 
+# NOT USED by models — training/evaluation utility, uses complex ops
 class LocalSnrTarget(torch.nn.Module):
     def __init__(
             self,
