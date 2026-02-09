@@ -25,7 +25,7 @@ MODEL_CONFIG = {
     "dpdfnet4":  {"sr": 16000, "win_len": 320},
     "dpdfnet8":  {"sr": 16000, "win_len": 320},
 
-    # 48 kHz models - TBD
+    # 48 kHz models
     "dpdfnet2_48khz_hr": {"sr": 48000, "win_len": 960},
 }
 
@@ -52,7 +52,7 @@ class STFTConfig:
 
 
 def make_stft_config(sr: int, win_len: int) -> STFTConfig:
-    hop_size = win_len // 2
+    hop_size = win_len // 2  # 50% hop
     win = vorbis_window(win_len)
     wnorm = get_wnorm(win_len, hop_size)
     return STFTConfig(sr=sr, win_len=win_len, hop_size=hop_size, win=win, wnorm=wnorm)
@@ -105,8 +105,7 @@ def postprocessing(spec_e: np.ndarray, cfg: STFTConfig) -> np.ndarray:
     waveform_e = np.concatenate(
         [waveform_e[cfg.win_len * 2 :], np.zeros(cfg.win_len * 2, dtype=np.float32)]
     )
-
-    return waveform_e
+    return waveform_e.astype(np.float32)
 
 
 # -----------------------------------------------------------------------------
@@ -178,6 +177,7 @@ def _load_model_and_cfg(model_name: str) -> tuple[Interpreter, STFTConfig]:
                     f"(expected F={expected_F}). Update MODEL_CONFIG for this model."
                 )
     except Exception:
+        # Do not hard-fail on odd/unknown shapes; the runtime error will be informative.
         pass
 
     return interpreter, cfg
@@ -253,7 +253,7 @@ def main():
         choices=sorted(MODEL_CONFIG.keys()),
         help=(
             "Name of the model to use. The script will automatically use the correct "
-            "sample-rate/STFT settings"
+            "sample-rate/STFT settings based on MODEL_CONFIG."
         ),
     )
 

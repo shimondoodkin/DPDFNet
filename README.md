@@ -152,23 +152,6 @@ Edit constants near the top of `real_time_demo.py`:
 
 ---
 
----
-
-## TFLite Inference
-
-`run_tflite.py` runs TFLite models on WAV files using streaming frame-by-frame inference.
-Models are loaded from `model_zoo/tflite/`.
-
-```bash
-python run_tflite.py --noisy_dir /path/to/noisy_wavs --enhanced_dir /path/to/out --model_name dpdfnet8
-```
-
-Available `--model_name` options: `baseline`, `dpdfnet2`, `dpdfnet4`, `dpdfnet8`, `dpdfnet2_48khz_hr`.
-
-When using `dpdfnet2_48khz_hr`, the script automatically switches to the 48kHz processing pipeline.
-
----
-
 ## ONNX Export
 
 ### Stateless (multi-frame)
